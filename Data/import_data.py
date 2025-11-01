@@ -138,7 +138,7 @@ while True:
         if globals()['Det%s' % str(i)].inWaiting():
             
             data = globals()['Det%s' % str(i)].readline().decode().replace('\r\n','')    # Wait and read data 
-            #print(data)
+            print(data)
             data = data.split("\t")
             
             ti = str(datetime.now()).split(" ")
@@ -147,9 +147,10 @@ while True:
             #data[1] = comp_time
             comp_date = ti[0].split('-')
             data.append(comp_date[2] + '/' +comp_date[1] + '/' + comp_date[0]) #ti[0].replace('-','/')
-            for j in range(len(data)):
-                #print(data[j])
-                file.write(data[j]+'\t')
+            file.write('\t'.join(filter(None, data)) + '\n')
+            #for j in range(len(data)):
+            #    #print(data[j])
+            #    file.write(data[j]+'\t')
             file.write("\n")
             #print(str(i+'\t') for i in data)
             #print(*data, sep='\t')
