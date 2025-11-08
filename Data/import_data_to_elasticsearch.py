@@ -171,7 +171,10 @@ def convert_to_elasticsearch_format(data, detector_id='cosmicwatch-001'):
         comp_date_str = data[12] if len(data) > 12 else None
         
         # Convert computer time to timestamp in milliseconds
-        timestamp_ms = None
+        # Prioritize current system time to ensure data appears in recent Kibana filters
+        timestamp_ms = int(time.time() * 1000)  # Use current system time
+        
+        # Optionally parse detector computer time for reference (but don't use for timestamp)
         if comp_date_str and comp_time_str:
             try:
                 date_parts = comp_date_str.split('/')
@@ -181,12 +184,13 @@ def convert_to_elasticsearch_format(data, detector_id='cosmicwatch-001'):
                         int(date_parts[2]), int(date_parts[1]), int(date_parts[0]),
                         int(time_parts[0]), int(time_parts[1]), int(float(time_parts[2]))
                     )
-                    timestamp_ms = int(dt.timestamp() * 1000)
+                    detector_timestamp_ms = int(dt.timestamp() * 1000)
+                    # Only use detector time if it's recent (within last hour)
+                    current_time_ms = int(time.time() * 1000)
+                    if abs(current_time_ms - detector_timestamp_ms) < 3600000:  # Within 1 hour
+                        timestamp_ms = detector_timestamp_ms
             except:
-                timestamp_ms = int(time.time() * 1000)
-        else:
-            # Use Pico timestamp if computer time not available
-            timestamp_ms = int(pico_timestamp_s * 1000)
+                pass
         
         # Create document with direct column mapping
         doc = {
