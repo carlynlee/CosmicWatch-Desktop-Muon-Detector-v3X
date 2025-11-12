@@ -37,14 +37,19 @@ Usage Examples:
 	When prompted, answer "n" to "Save to file too?"
 
 2. Upload to Elasticsearch only (no file):
-	# Set up port-forward to your Elasticsearch cluster
-	kubectl port-forward -n cblee-credo svc/credo-elasticsearch-service 9200:9200 &
+	# IMPORTANT: Set up port-forward FIRST (in a separate terminal)
+	# Use the HTTP service for reliable connections:
+	kubectl port-forward -n cblee-credo svc/credo-elasticsearch-es-http 9200:9200 &
+	
+	# Keep that terminal running! Then in a NEW terminal:
+	cd /path/to/CosmicWatch-Desktop-Muon-Detector-v3X/Data
 	
 	# Set environment variables
 	export ES_HOST="https://localhost:9200"
 	export ES_USER="elastic"
 	export ES_PASS="your-elasticsearch-password"
-	export ES_ENABLED="true"
+	export ES_INDEX="credo-detections"
+	export ES_ENABLED="true" 
 	
 	# Run the script
 	python3 import_data_to_elasticsearch.py
@@ -53,6 +58,14 @@ Usage Examples:
 	# - Select port: [enter the number for your detector port]
 	# - Enter detector ID: [enter ID or press Enter for default]
 	# - Save to file too? n  (answer "n" to skip file writing)
+	
+	# Verify data is being posted:
+	# Wait 30 seconds, then check document count:
+	curl -k -u "elastic:YOUR_PASSWORD" "https://localhost:9200/credo-detections/_count" \
+	  -H "Content-Type: application/json" \
+	  -d '{"query": {"term": {"source": "cosmicwatch-v3x"}}}'
+	
+	# If count increases, data is being posted successfully!
 
 3. Upload to Elasticsearch AND save to file:
 	Follow setup for option 2, but answer "y" when asked "Save to file too?"
@@ -91,11 +104,13 @@ Checking Your Data in Elasticsearch:
 After uploading data to Elasticsearch, you can check it using several methods:
 
 1. Quick Check (using curl):
-	# Make sure port-forward is running:
-	kubectl port-forward -n cblee-credo svc/credo-elasticsearch-service 9200:9200 &
+	# Make sure port-forward is running (use HTTP service):
+	kubectl port-forward -n cblee-credo svc/credo-elasticsearch-es-http 9200:9200
 	
 	# Get total document count:
-	curl -k -u "elastic:PASSWORD" https://localhost:9200/credo-detections/_count
+	curl -k -u "elastic:PASSWORD" "https://localhost:9200/credo-detections/_count" \
+	  -H "Content-Type: application/json" \
+	  -d '{"query": {"term": {"source": "cosmicwatch-v3x"}}}'
 	
 	# Get latest 5 detections:
 	curl -k -u "elastic:PASSWORD" https://localhost:9200/credo-detections/_search \
